@@ -2,17 +2,18 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from preprocessing import get_processed_data
 
-data = get_processed_data()
 
-def id_based_recommendations( item_id, top_n):
-    global data
+
+
+
+def id_based_recommendations( data,item_id, top_n):
+    
     train_data = data
     # Check if the item name exists in the training data
     if item_id not in train_data['id'].values:
         print(f"Item '{item_id}' not found in the training data.")
-        return pd.DataFrame()
+        return None
 
     # Create a TF-IDF vectorizer for item descriptions
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
@@ -33,7 +34,7 @@ def id_based_recommendations( item_id, top_n):
     similar_items = sorted(similar_items, key=lambda x: x[1], reverse=True)
 
     # Get the top N most similar items (excluding the item itself)
-    top_similar_items = similar_items[1:top_n+1]
+    top_similar_items = similar_items[0:top_n+1]
 
     # Get the indices of the top similar items
     recommended_item_indices = [x[0] for x in top_similar_items]
@@ -44,26 +45,33 @@ def id_based_recommendations( item_id, top_n):
     return recommended_items_details
 
 
-def main_function_recommendation(item_ids):
+def main_function_recommendation(data,item_ids):
     all_recommendations = pd.DataFrame()
-    top_n=5
+    
+    length = len(item_ids)
+    top_n = 40 // length
+
+
     for item_id in item_ids:
-        recommendations = id_based_recommendations(item_id, top_n)
+        recommendations = id_based_recommendations(data, item_id, top_n)
+        if recommendations is None:
+            continue
+        
         all_recommendations = pd.concat([all_recommendations, recommendations])
 
     # Remove duplicates based on 'id'
     all_recommendations = all_recommendations.drop_duplicates(subset=['id']).reset_index(drop=True)
 
-    # Exclude the item_ids from the final recommendations
-    all_recommendations = all_recommendations[~all_recommendations['id'].isin(item_ids)].reset_index(drop=True)
+    # # Exclude the item_ids from the final recommendations
+    # all_recommendations = all_recommendations[~all_recommendations['id'].isin(item_ids)].reset_index(drop=True)
 
     return all_recommendations
 
-def keyword_search(query, top_n=20):
-    global data
+def keyword_search(data, query, top_n=40):
+    
     df = data
     if df.empty:
-        return pd.DataFrame()
+        return None
 
     tfidf_vectorizer = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf_vectorizer.fit_transform(df['tags'])
