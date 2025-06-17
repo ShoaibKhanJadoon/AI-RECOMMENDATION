@@ -11,6 +11,13 @@ from functions import id_based_recommendations
 import os
 from fastapi.middleware.cors import CORSMiddleware
 import requests
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("app:app", host="0.0.0.0", port=port)
+
 # Load the .env file
 load_dotenv()
 
